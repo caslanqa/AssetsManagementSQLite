@@ -3,8 +3,6 @@ package com.caslanqa.assetsmanagement;
 import com.caslanqa.service.AssetService;
 import com.caslanqa.utils.DateUtils;
 import com.caslanqa.utils.DbHelper;
-import com.caslanqa.utils.FileUtils;
-import com.caslanqa.utils.FormUtils;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -17,8 +15,6 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.caslanqa.utils.DbHelper.getLatestCurrencies;
-import static com.caslanqa.utils.FileUtils.recordCurrencies;
 import static com.caslanqa.utils.FormUtils.*;
 
 
