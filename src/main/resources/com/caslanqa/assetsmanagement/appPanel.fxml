@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+
+<AnchorPane fx:id="basePane" prefHeight="600.0" prefWidth="1200.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.caslanqa.assetsmanagement.AssetsManagementsController">
+        <padding>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+        </padding>
+
+        <Label layoutX="473.0" layoutY="35.0" style="-fx-font-size: 20; -fx-font-weight: bold" text="Assets Management Console" />
+
+       <TabPane fx:id="functionTabs" layoutX="10.0" layoutY="78.0" prefHeight="400.0" prefWidth="1180.0" style="-fx-border-color: blue; -fx-border-width: 2; -fx-border-style: solid; -fx-border-radius: 5; -fx-background-color: white;" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="80.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="78.0">
+     <tabs>
+       <Tab fx:id="manageAssetsTabTitle" text="Manage Asset(s) Record">
+         <content>
+           <AnchorPane fx:id="newAssetsTab" minHeight="0.0" minWidth="0.0" prefHeight="445.0" prefWidth="1180.0">
+                  <children>
+                            <Pane fx:id="inputsPane" centerShape="false" prefHeight="368.0" prefWidth="1140.0">
+                              <Button fx:id="recordAssetsBtn" layoutX="428.0" layoutY="243.0" mnemonicParsing="false" onMouseClicked="#recordAssetsBtn" prefHeight="50.0" prefWidth="129.0" text="Record Assets">
+                                 <font>
+                                    <Font name="Arial Bold" size="14.0" />
+                                 </font>
+                              </Button>
+                              <Button fx:id="deleteAssetsBtn" layoutX="604.0" layoutY="243.0" mnemonicParsing="false" onMouseClicked="#deleteAssetsBtn" prefHeight="50.0" prefWidth="129.0" text="Delete Assets">
+                                 <font>
+                                    <Font name="Arial Bold" size="14.0" />
+                                 </font>
+                              </Button>
+                              <GridPane layoutX="-2.0" layoutY="30.0" minWidth="1118.0" prefHeight="148.0" prefWidth="1140.0">
+                              <columnConstraints>
+                                  <ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                  <ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                  <ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                  <ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                  <ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                              </columnConstraints>
+                              <rowConstraints>
+                                  <RowConstraints maxHeight="60.0" minHeight="10.0" prefHeight="28.0" vgrow="SOMETIMES" />
+                                  <RowConstraints maxHeight="38.0" minHeight="0.0" prefHeight="32.0" vgrow="SOMETIMES" />
+                                          <RowConstraints maxHeight="38.0" minHeight="10.0" prefHeight="32.0" vgrow="SOMETIMES" />
+                                          <RowConstraints maxHeight="38.0" minHeight="10.0" prefHeight="32.0" vgrow="SOMETIMES" />
+                              </rowConstraints>
+                              <children>
+                                  <Text text="Tarih">
+                                      <font>
+                                          <Font size="14.0" />
+                                      </font>
+                                  </Text>
+      
+                                                    <Text text="Euro" GridPane.columnIndex="1">
+                                      <font>
+                                          <Font size="14.0" />
+                                      </font>
+                                  </Text>
+                                  <TextField fx:id="euroField" prefHeight="25.0" prefWidth="120.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+      
+                                                    <Text text="Dolar" GridPane.columnIndex="2">
+                                      <font>
+                                          <Font size="14.0" />
+                                      </font>
+                                  </Text>
+                                  <TextField fx:id="dolarField" prefHeight="25.0" prefWidth="120.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                                      <opaqueInsets>
+                                          <Insets />
+                                      </opaqueInsets>
+                                  </TextField>
+      
+                                                    <Text text="22 Ayar" GridPane.columnIndex="3">
+                                      <font>
+                                          <Font size="14.0" />
+                                      </font>
+                                  </Text>
+                                  <TextField fx:id="bilezikField" prefHeight="25.0" prefWidth="120.0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+      
+                                                    <Text text="Ata Lira" GridPane.columnIndex="4">
+                                      <font>
+                                          <Font size="14.0" />
+                                      </font>
+                                  </Text>
+                                  <TextField fx:id="ataLiraField" prefHeight="25.0" prefWidth="120.0" GridPane.columnIndex="4" GridPane.rowIndex="1" />
+      
+                                                    <Text text="Tam Altın" GridPane.rowIndex="2">
+                                      <font>
+                                          <Font size="14.0" />
+                                      </font>
+                                  </Text>
+                                  <TextField fx:id="tamAltinField" prefHeight="25.0" prefWidth="120.0" GridPane.rowIndex="3" />
+      
+                                                    <Text text="Yarım Altın" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                                      <font>
+                                          <Font size="14.0" />
+                                      </font>
+                                  </Text>
+                                  <TextField fx:id="yarimAltinField" prefHeight="25.0" prefWidth="120.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+      
+                                                    <Text text="Çeyrek Altın" GridPane.columnIndex="2" GridPane.rowIndex="2">
+                                      <font>
+                                          <Font size="14.0" />
+                                      </font>
+                                  </Text>
+                                  <TextField fx:id="ceyrekAltinField" prefHeight="25.0" prefWidth="120.0" GridPane.columnIndex="2" GridPane.rowIndex="3" />
+      
+                                                    <Text text="Gram Altın" GridPane.columnIndex="3" GridPane.rowIndex="2">
+                                      <font>
+                                          <Font size="14.0" />
+                                      </font>
+                                  </Text>
+                                  <TextField fx:id="gramAltinField" prefHeight="25.0" prefWidth="120.0" GridPane.columnIndex="3" GridPane.rowIndex="3" />
+      
+                                                    <Text text="TL" GridPane.columnIndex="4" GridPane.rowIndex="2">
+                                      <font>
+                                          <Font size="14.0" />
+                                      </font>
+                                  </Text>
+                                  <TextField fx:id="tryField" prefHeight="25.0" prefWidth="120.0" GridPane.columnIndex="4" GridPane.rowIndex="3" />
+                              <Label fx:id="dateLabel" alignment="CENTER" contentDisplay="CENTER" prefHeight="25.0" prefWidth="120.0" textAlignment="CENTER" GridPane.rowIndex="1">
+                                 <font>
+                                    <Font size="16.0" />
+                                 </font>
+                              </Label>
+                              </children>
+                              </GridPane>
+                                <opaqueInsets>
+                                    <Insets top="50.0" />
+                                </opaqueInsets>
+                            </Pane>
+                  </children>
+               </AnchorPane>
+         </content>
+       </Tab>
+         <Tab text="Currency Page">
+           <content>
+             <AnchorPane fx:id="assetsOverview" minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                  <children>
+                           <Pane fx:id="inputsPane1" centerShape="false" prefHeight="370.0" prefWidth="1135.0">
+                              <opaqueInsets>
+                                 <Insets top="50.0" />
+                              </opaqueInsets>
+                              <children>
+                                 <Button fx:id="setCurrenciesBtn" layoutX="516.0" layoutY="249.0" mnemonicParsing="false" onMouseClicked="#setCurrenciesBtn" prefHeight="50.0" prefWidth="129.0" text="Set Currencies">
+                                    <font>
+                                       <Font name="Arial Bold" size="14.0" />
+                                    </font>
+                                 </Button>
+                                 <Label layoutX="457.0" layoutY="157.0" text="Total ₺">
+                                    <font>
+                                       <Font name="System Bold" size="24.0" />
+                                    </font>
+                                 </Label>
+                                 <Label layoutX="633.0" layoutY="157.0" text="Total $">
+                                    <font>
+                                       <Font name="System Bold" size="24.0" />
+                                    </font>
+                                 </Label>
+                                 <Label fx:id="totalTryDisplay" layoutX="458.0" layoutY="193.0" onMouseClicked="#totalTryDisplay" text="0.00 ₺">
+                                    <font>
+                                       <Font size="24.0" />
+                                    </font>
+                                 </Label>
+                                 <Label fx:id="totalUsdDisplay" layoutX="634.0" layoutY="193.0" text="0.00 ₺">
+                                    <font>
+                                       <Font size="24.0" />
+                                    </font>
+                                 </Label>
+                                 <GridPane fx:id="inputsGridCurrencies" layoutX="72.0" layoutY="45.0" minWidth="1022.0" prefHeight="80.0" prefWidth="1022.0">
+                                    <columnConstraints>
+                                       <ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                       <ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                       <ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                       <ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                       <ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                       <ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                       <ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                       <ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                       <ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                    </columnConstraints>
+                                    <rowConstraints>
+                                       <RowConstraints maxHeight="60.0" minHeight="10.0" prefHeight="28.0" vgrow="SOMETIMES" />
+                                       <RowConstraints maxHeight="38.0" minHeight="0.0" prefHeight="32.0" vgrow="SOMETIMES" />
+                                    </rowConstraints>
+                                    <children>
+                                       <Text text="Tarih">
+                                          <font>
+                                             <Font size="14.0" />
+                                          </font>
+                                       </Text>
+                                       <Text text="Euro" GridPane.columnIndex="1">
+                                          <font>
+                                             <Font size="14.0" />
+                                          </font>
+                                       </Text>
+                                       <TextField fx:id="euroFieldCurrencies" prefHeight="25.0" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                       <Text text="Dolar" GridPane.columnIndex="2">
+                                          <font>
+                                             <Font size="14.0" />
+                                          </font>
+                                       </Text>
+                                       <TextField fx:id="dolarFieldCurrencies" prefHeight="25.0" prefWidth="100.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                                          <opaqueInsets>
+                                             <Insets />
+                                          </opaqueInsets>
+                                       </TextField>
+                                       <Text text="22 Ayar" GridPane.columnIndex="3">
+                                          <font>
+                                             <Font size="14.0" />
+                                          </font>
+                                       </Text>
+                                       <TextField fx:id="bilezikFieldCurrencies" prefHeight="25.0" prefWidth="100.0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+                                       <Text text="Ata Lira" GridPane.columnIndex="4">
+                                          <font>
+                                             <Font size="14.0" />
+                                          </font>
+                                       </Text>
+                                       <TextField fx:id="ataLiraFieldCurrencies" prefHeight="25.0" prefWidth="100.0" GridPane.columnIndex="4" GridPane.rowIndex="1" />
+                                       <Text text="Tam Altın" GridPane.columnIndex="5">
+                                          <font>
+                                             <Font size="14.0" />
+                                          </font>
+                                       </Text>
+                                       <TextField fx:id="tamAltinFieldCurrencies" prefHeight="25.0" prefWidth="100.0" GridPane.columnIndex="5" GridPane.rowIndex="1" />
+                                       <Text text="Yarım Altın" GridPane.columnIndex="6">
+                                          <font>
+                                             <Font size="14.0" />
+                                          </font>
+                                       </Text>
+                                       <TextField fx:id="yarimAltinFieldCurrencies" prefHeight="25.0" prefWidth="100.0" GridPane.columnIndex="6" GridPane.rowIndex="1" />
+                                       <Text text="Çeyrek Altın" GridPane.columnIndex="7">
+                                          <font>
+                                             <Font size="14.0" />
+                                          </font>
+                                       </Text>
+                                       <TextField fx:id="ceyrekAltinFieldCurrencies" prefHeight="25.0" prefWidth="100.0" GridPane.columnIndex="7" GridPane.rowIndex="1" />
+                                       <Text text="Gram Altın" GridPane.columnIndex="8">
+                                          <font>
+                                             <Font size="14.0" />
+                                          </font>
+                                       </Text>
+                                       <TextField fx:id="gramAltinFieldCurrencies" prefHeight="25.0" prefWidth="100.0" GridPane.columnIndex="8" GridPane.rowIndex="1" />
+                                 <Label fx:id="dateLabelCurrencies" alignment="CENTER" contentDisplay="CENTER" prefHeight="25.0" prefWidth="100.0" textAlignment="CENTER" wrapText="true" GridPane.rowIndex="1">
+                                    <font>
+                                       <Font size="16.0" />
+                                    </font></Label>
+                                    </children>
+                                 </GridPane>
+                              </children>
+                           </Pane>
+                  </children>
+               </AnchorPane>
+           </content>
+         </Tab>
+         <Tab fx:id="analysisTabTitle" text="Analysis Page">
+           <content>
+             <AnchorPane fx:id="analayzeAssetsTab" minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                  <children>
+                     <TabPane fx:id="analysisTabPane" prefHeight="367.0" prefWidth="1137.0" tabClosingPolicy="UNAVAILABLE">
+                       <tabs>
+                         <Tab fx:id="unitBasedTab" text="Assets Unit Based">
+                           <content>
+                             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="336.0" prefWidth="1133.0">
+                                    <children>
+                                       <LineChart fx:id="goldWeightChart" layoutX="13.0" layoutY="7.0" prefHeight="321.0" prefWidth="356.0" title="22 Karat Gold Weight Chart">
+                                         <xAxis>
+                                           <CategoryAxis fx:id="assetsChartHorizontalPart" prefHeight="56.0" prefWidth="1097.0" side="BOTTOM" />
+                                         </xAxis>
+                                         <yAxis>
+                                           <NumberAxis fx:id="assetsChartVerticalPart" side="LEFT" />
+                                         </yAxis>
+                                       </LineChart>
+                                       <LineChart fx:id="goldUnitChart" layoutX="385.0" prefHeight="321.0" prefWidth="356.0" title="Unit Based Golds Growth Chart">
+                                          <xAxis>
+                                             <CategoryAxis fx:id="assetsChartHorizontalPart1" prefHeight="56.0" prefWidth="1097.0" side="BOTTOM" />
+                                          </xAxis>
+                                          <yAxis>
+                                             <NumberAxis fx:id="assetsChartVerticalPart1" side="LEFT" />
+                                          </yAxis>
+                                       </LineChart>
+                                       <LineChart fx:id="fiatGrowthChart" layoutX="762.0" prefHeight="321.0" prefWidth="356.0" title="Fiat Growth Chart">
+                                          <xAxis>
+                                             <CategoryAxis fx:id="assetsChartHorizontalPart11" prefHeight="56.0" prefWidth="1097.0" side="BOTTOM" />
+                                          </xAxis>
+                                          <yAxis>
+                                             <NumberAxis fx:id="assetsChartVerticalPart11" side="LEFT" />
+                                          </yAxis>
+                                       </LineChart>
+                                    </children>
+                                 </AnchorPane>
+                           </content>
+                         </Tab>
+                         <Tab fx:id="totalOverviewTab" text="Total Overview ₺ $">
+                           <content>
+                             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                    <children>
+                                       <LineChart fx:id="totalTRYAssetsChart" layoutX="7.0" layoutY="14.0" prefHeight="312.0" prefWidth="554.0" title="Total Assets in ₺">
+                                         <xAxis>
+                                           <CategoryAxis fx:id="tootalChartHorizontalPart" side="BOTTOM" />
+                                         </xAxis>
+                                         <yAxis>
+                                           <NumberAxis fx:id="totalChartVerticalPart" side="LEFT" />
+                                         </yAxis>
+                                       </LineChart>
+                                       <LineChart fx:id="totalUSDAssetsChart" layoutX="586.0" layoutY="12.0" prefHeight="312.0" prefWidth="537.0" title="Total Assets in $">
+                                          <xAxis>
+                                             <CategoryAxis fx:id="tootalChartHorizontalPart1" side="BOTTOM" />
+                                          </xAxis>
+                                          <yAxis>
+                                             <NumberAxis fx:id="totalChartVerticalPart1" side="LEFT" />
+                                          </yAxis>
+                                       </LineChart>
+                                    </children></AnchorPane>
+                           </content>
+                         </Tab>
+                       </tabs>
+                     </TabPane>
+                  </children></AnchorPane>
+           </content>
+         </Tab>
+     </tabs>
+   </TabPane>
+   <Button fx:id="closeBtn" layoutX="536.0" layoutY="526.0" mnemonicParsing="false" onMouseClicked="#closeBtn" prefHeight="50.0" prefWidth="129.0" style="-fx-background-color: red;" text="CLOSE" textAlignment="CENTER" textFill="WHITE" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="536.0">
+      <font>
+         <Font name="Arial Bold" size="14.0" />
+      </font>
+   </Button>
+ </AnchorPane>
