@@ -1,8 +1,6 @@
 module com.caslanqa.assetsmanagement {
     requires javafx.controls;
     requires javafx.fxml;
-    requires org.apache.poi.poi;
-    requires org.apache.poi.ooxml;
     requires java.sql;
     requires javafx.graphics;
     requires org.yaml.snakeyaml;
