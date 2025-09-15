@@ -27,15 +27,19 @@ public class RegistrationController {
     private TextField usernameSignUp;
 
     @FXML
+    private TextField currencyApiKey;
+
+    @FXML
     void signUpBtn(MouseEvent event) throws SQLException {
         String user = usernameSignUp.getText();
         String pass = passwordSignUp.getText();
+        String apiKey = currencyApiKey.getText();
 
         if (FormUtils.checkUsernamePassword(user,pass)){
             if (DbHelper.isUsernameExists(user))
                 FormUtils.showError("Registration Error", "Username already exists.");
 
-            DbHelper.registerUser(user, pass);
+            DbHelper.registerUser(user, pass, apiKey);
             FormUtils.showInfo("Registration Successful", "User registered successfully.");
 
             try {

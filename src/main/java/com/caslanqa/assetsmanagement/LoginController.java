@@ -33,7 +33,13 @@ public class LoginController {
                 Parent root = FXMLLoader.load(getClass().getResource("/com/caslanqa/assetsmanagement/appPanel.fxml"));
                 Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
                 stage.getScene().setRoot(root);
+
+                DbHelper.setAPIKey();
             } catch (IOException e) {
+                e.printStackTrace();
+                FormUtils.showSystemError("Warning", "Failed to load main UI.");
+            } catch (Exception e) {
+                e.printStackTrace();
                 FormUtils.showSystemError("Warning", "Failed to load main UI.");
             }
         }

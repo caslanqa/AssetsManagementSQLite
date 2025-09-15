@@ -6,15 +6,15 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.sql.*;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class DbHelper {
     private static final Logger LOGGER = Logger.getLogger(DbHelper.class.getName());
-    private static String DB_URL;
-    private static Integer currentUserId = null; // Giriş yapan kullanıcının ID'si
+    public static String DB_URL;
+    private static Integer currentUserId = null;
+    public static String API_KEY = null;
 
     // --- CONFIG LOADING ---
     static {
@@ -58,54 +58,55 @@ public class DbHelper {
 
     public static void initializeDatabase() {
         String createUserTable = """
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT NOT NULL UNIQUE,
-                password TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-        """;
+                    CREATE TABLE IF NOT EXISTS users (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username TEXT NOT NULL UNIQUE,
+                        password TEXT NOT NULL,
+                        api_key TEXT NOT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    );
+                """;
 
         String createAssetsTable = """
-            CREATE TABLE IF NOT EXISTS asset_history (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        asset_type TEXT NOT NULL,
-                        quantity REAL NOT NULL,
-                        record_type TEXT NOT NULL CHECK (record_type IN ('+', '-')),
-                        user_id INTEGER NOT NULL,
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                    );
+                    CREATE TABLE IF NOT EXISTS asset_history (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                asset_type TEXT NOT NULL,
+                                quantity REAL NOT NULL,
+                                record_type TEXT NOT NULL CHECK (record_type IN ('+', '-')),
+                                user_id INTEGER NOT NULL,
+                                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                            );
                 
-        """;
+                """;
 
         String createCurrenciesTable = """
-            CREATE TABLE IF NOT EXISTS currencies (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                currency_code TEXT NOT NULL,
-                rate REAL NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-        """;
+                    CREATE TABLE IF NOT EXISTS currencies (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        currency_code TEXT NOT NULL,
+                        rate REAL NOT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    );
+                """;
 
         String createNetAssetsTable = """
-            CREATE TABLE IF NOT EXISTS net_assets (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        euro REAL NOT NULL DEFAULT 0,
-                        ataLira REAL NOT NULL DEFAULT 0,
-                        tamAltin REAL NOT NULL DEFAULT 0,
-                        gramAltin REAL NOT NULL DEFAULT 0,
-                        ceyrekAltin REAL NOT NULL DEFAULT 0,
-                        yarimAltin REAL NOT NULL DEFAULT 0,
-                        bilezik REAL NOT NULL DEFAULT 0,
-                        dolar REAL NOT NULL DEFAULT 0,
-                        tl REAL NOT NULL DEFAULT 0,
-                        user_id INTEGER NOT NULL,
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                    );
+                    CREATE TABLE IF NOT EXISTS net_assets (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                euro REAL NOT NULL DEFAULT 0,
+                                ataLira REAL NOT NULL DEFAULT 0,
+                                tamAltin REAL NOT NULL DEFAULT 0,
+                                gramAltin REAL NOT NULL DEFAULT 0,
+                                ceyrekAltin REAL NOT NULL DEFAULT 0,
+                                yarimAltin REAL NOT NULL DEFAULT 0,
+                                bilezik REAL NOT NULL DEFAULT 0,
+                                dolar REAL NOT NULL DEFAULT 0,
+                                tl REAL NOT NULL DEFAULT 0,
+                                user_id INTEGER NOT NULL,
+                                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                            );
                 
-        """;
+                """;
 
         try (Connection conn = connect();
              Statement stmt = conn.createStatement()) {
@@ -120,7 +121,7 @@ public class DbHelper {
     }
 
     // --- USER REGISTER & LOGIN ---
-    public static boolean registerUser(String username, String password) throws SQLException {
+    public static boolean registerUser(String username, String password, String apiKey) throws SQLException {
         if (isUsernameExists(username)) {
             throw new SQLException("Bu kullanıcı adı zaten kullanılıyor: " + username);
         }
@@ -133,6 +134,7 @@ public class DbHelper {
         Map<String, Object> values = new HashMap<>();
         values.put("username", username.trim());
         values.put("password", hashedPassword);
+        values.put("api_key", apiKey);
 
         long userId = insert("users", values, false);
         if (userId > 0) {
@@ -242,7 +244,7 @@ public class DbHelper {
         return insert("asset_history", values, false);
     }
 
-    public static long insertCurrensies(String currency_code, double rate) throws SQLException {
+    public static long insertCurrencies(String currency_code, double rate) throws SQLException {
         if (currentUserId == null) {
             throw new SQLException("Kullanıcı oturumu açık değil!");
         }
@@ -263,18 +265,18 @@ public class DbHelper {
     public static Map<String, Double> getLatestCurrencies() throws SQLException {
         Map<String, Double> latestRates = new HashMap<>();
         String sql = """
-            SELECT
-                t1.currency_code,
-                t1.rate
-            FROM
-                currencies t1
-            INNER JOIN
-                (SELECT currency_code, MAX(created_at) AS max_created_at FROM currencies WHERE rate > 0 GROUP BY currency_code) t2
-            ON
-                t1.currency_code = t2.currency_code AND t1.created_at = t2.max_created_at
-            WHERE
-                t1.rate > 0;
-        """;
+                    SELECT
+                        t1.currency_code,
+                        t1.rate
+                    FROM
+                        currencies t1
+                    INNER JOIN
+                        (SELECT currency_code, MAX(created_at) AS max_created_at FROM currencies WHERE rate > 0 GROUP BY currency_code) t2
+                    ON
+                        t1.currency_code = t2.currency_code AND t1.created_at = t2.max_created_at
+                    WHERE
+                        t1.rate > 0;
+                """;
 
         try (Connection conn = connect();
              PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -289,51 +291,41 @@ public class DbHelper {
         return latestRates;
     }
 
-    public static List<Map<String, Object>> getNetAssetsData(int userId) {
-        List<Map<String, Object>> result = new ArrayList<>();
-
-        String sql = "SELECT euro, ataLira, tamAltin, gramAltin, ceyrekAltin, yarimAltin, bilezik, dolar, tl, created_at " +
-                "FROM net_assets WHERE user_id = ? ORDER BY created_at";
-
+    public static List<Map<String, Object>> getSqlQuery(String sqlText) {
+        List<Map<String, Object>> results = new ArrayList<>();
         try (Connection conn = DriverManager.getConnection(DB_URL);
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sqlText)) {
 
-            stmt.setInt(1, userId);
-            ResultSet rs = stmt.executeQuery();
-
-            // Tarih formatlama için SimpleDateFormat nesnesi oluştur
-            SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
-
-            while (rs.next()) {
-                Map<String, Object> row = new HashMap<>();
-                row.put("euro", rs.getDouble("euro"));
-                row.put("ataLira", rs.getDouble("ataLira"));
-                row.put("tamAltin", rs.getDouble("tamAltin"));
-                row.put("gramAltin", rs.getDouble("gramAltin"));
-                row.put("ceyrekAltin", rs.getDouble("ceyrekAltin"));
-                row.put("yarimAltin", rs.getDouble("yarimAltin"));
-                row.put("bilezik", rs.getDouble("bilezik"));
-                row.put("dolar", rs.getDouble("dolar"));
-                row.put("tl", rs.getDouble("tl"));
-
-                // created_at sütununu alıp Timestamp'e çevir, sonra formatla
-                Timestamp timestamp = rs.getTimestamp("created_at");
-                if (timestamp != null) {
-                    row.put("created_at", sdf.format(timestamp));
-                } else {
-                    row.put("created_at", ""); // Null değerler için boş string
+            stmt.setInt(1, currentUserId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                ResultSetMetaData meta = rs.getMetaData();
+                int colCount = meta.getColumnCount();
+                while (rs.next()) {
+                    Map<String, Object> row = new HashMap<>();
+                    for (int i = 1; i <= colCount; i++) {
+                        row.put(meta.getColumnLabel(i), rs.getObject(i));
+                    }
+                    results.add(row);
                 }
-
-                System.out.println("row = " + row);
-                result.add(row);
             }
-
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
-
-        return result;
+        return results;
     }
 
+    public static void setAPIKey() throws SQLException {
+        String sql = "SELECT api_key FROM users WHERE id = ?";
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, currentUserId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next())
+                    API_KEY = rs.getString("api_key");
 
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 }

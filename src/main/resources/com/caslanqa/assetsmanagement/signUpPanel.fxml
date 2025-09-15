@@ -25,7 +25,8 @@
         <font>
             <Font name="Arial" size="16.0" />
         </font></PasswordField>
-    <Label fx:id="messageLabel" textFill="#a4a4a4"/>
+   <TextField fx:id="currencyApiKey" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="30.0" prefWidth="300.0" promptText="Currency API Key" />
+    <Label fx:id="messageLabel" textFill="#a4a4a4" />
     <Button fx:id="signUpBtn" onMouseClicked="#signUpBtn" prefHeight="64.0" prefWidth="139.0" style="-fx-background-color: green;" text="SIGN UP" textFill="WHITE">
         <font>
             <Font name="Arial Bold" size="24.0" />

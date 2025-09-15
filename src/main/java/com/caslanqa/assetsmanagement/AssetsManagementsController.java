@@ -1,7 +1,7 @@
 package com.caslanqa.assetsmanagement;
 
 import com.caslanqa.service.AssetService;
-import com.caslanqa.utils.DateUtils;
+import com.caslanqa.service.CurrencyService;
 import com.caslanqa.utils.DbHelper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -13,7 +13,6 @@ import javafx.scene.input.MouseEvent;
 import javafx.util.Duration;
 
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -25,66 +24,72 @@ public class AssetsManagementsController {
 
     Map<String, String> values = new HashMap<>();
 
+
     @FXML
     private TabPane analysisTabPane;
+
     @FXML
     private TextField ataLiraField;
-    @FXML
-    private TextField ataLiraFieldCurrencies;
+
     @FXML
     private TextField bilezikField;
-    @FXML
-    private TextField bilezikFieldCurrencies;
+
     @FXML
     private TextField ceyrekAltinField;
-    @FXML
-    private TextField ceyrekAltinFieldCurrencies;
-    @FXML
-    private Label dateLabel;
-    @FXML
-    private DatePicker datePickerCurrencies;
+
     @FXML
     private TextField dolarField;
-    @FXML
-    private TextField dolarFieldCurrencies;
+
     @FXML
     private TextField euroField;
+
     @FXML
-    private TextField euroFieldCurrencies;
+    private LineChart<String, Number> euroGrowthChart;
+
     @FXML
-    private LineChart<String, Number> fiatGrowthChart;
+    private TabPane functionTabs;
+
     @FXML
     private LineChart<String, Number> goldUnitChart;
+
     @FXML
     private LineChart<String, Number> goldWeightChart;
+
     @FXML
     private TextField gramAltinField;
-    @FXML
-    private TextField gramAltinFieldCurrencies;
+
     @FXML
     private TextField tamAltinField;
-    @FXML
-    private TextField tamAltinFieldCurrencies;
-    @FXML
-    private LineChart<String, Number> totalTRYAssetsChart;
-    @FXML
-    private LineChart<String, Number> totalUSDAssetsChart;
+
     @FXML
     private Tab totalOverviewTab;
+
+    @FXML
+    private LineChart<String, Number> totalTRYAssetsChart;
+
     @FXML
     private Label totalTryDisplay;
+
+    @FXML
+    private LineChart<String, Number> totalUSDAssetsChart;
+
     @FXML
     private Label totalUsdDisplay;
+
     @FXML
     private TextField tryField;
+
+    @FXML
+    private LineChart<String, Number> tryGrowthChart;
+
     @FXML
     private Tab unitBasedTab;
+
     @FXML
-    private Label dateLabelCurrencies;
+    private LineChart<String, Number> usdGrowthChart;
+
     @FXML
     private TextField yarimAltinField;
-    @FXML
-    private TextField yarimAltinFieldCurrencies;
 
     private ObservableList<Map<String, String>> assetsData = FXCollections.observableArrayList();
     private ObservableList<Map<String, String>> currenciesData = FXCollections.observableArrayList();
@@ -99,6 +104,8 @@ public class AssetsManagementsController {
         recordAssets("+");
         AssetService.insertNetAssets(AssetService.calculateLatestAssetsValues());
         clearFormFields();
+        populateTotalOverview();
+        refreshAssetsChart();
     }
 
     @FXML
@@ -106,14 +113,15 @@ public class AssetsManagementsController {
         recordAssets("-");
         AssetService.insertNetAssets(AssetService.calculateLatestAssetsValues());
         clearFormFields();
+        populateTotalOverview();
+        refreshAssetsChart();
     }
 
     @FXML
-    void setCurrenciesBtn(MouseEvent event) throws SQLException {
-        collectCurrenciesFormValues();
-        clearOverviewFormFields();
+    void setCurrenciesBtn(MouseEvent event) throws Exception {
         recordCurrencies();
         refreshAssetsChart();
+        populateTotalOverview();
     }
 
     private void clearFormFields() {
@@ -126,18 +134,6 @@ public class AssetsManagementsController {
         if (ceyrekAltinField != null) ceyrekAltinField.clear();
         if (gramAltinField != null) gramAltinField.clear();
         if (tryField != null) tryField.clear();
-    }
-
-    private void clearOverviewFormFields() {
-        if (datePickerCurrencies != null) datePickerCurrencies.setValue(null);
-        if (euroFieldCurrencies != null) euroFieldCurrencies.clear();
-        if (dolarFieldCurrencies != null) dolarFieldCurrencies.clear();
-        if (bilezikFieldCurrencies != null) bilezikFieldCurrencies.clear();
-        if (ataLiraFieldCurrencies != null) ataLiraFieldCurrencies.clear();
-        if (tamAltinFieldCurrencies != null) tamAltinFieldCurrencies.clear();
-        if (yarimAltinFieldCurrencies != null) yarimAltinFieldCurrencies.clear();
-        if (ceyrekAltinFieldCurrencies != null) ceyrekAltinFieldCurrencies.clear();
-        if (gramAltinFieldCurrencies != null) gramAltinFieldCurrencies.clear();
     }
 
     private void collectFormValues() {
@@ -153,16 +149,11 @@ public class AssetsManagementsController {
         values.put("tl", tryField != null && !tryField.getText().isEmpty() ? tryField.getText() : "0");
     }
 
-    private void collectCurrenciesFormValues() {
-        values.clear();
-        values.put("euro", euroFieldCurrencies != null && !euroFieldCurrencies.getText().isEmpty() ? euroFieldCurrencies.getText() : "0");
-        values.put("dolar", dolarFieldCurrencies != null && !dolarFieldCurrencies.getText().isEmpty() ? dolarFieldCurrencies.getText() : "0");
-        values.put("bilezik", bilezikFieldCurrencies != null && !bilezikFieldCurrencies.getText().isEmpty() ? bilezikFieldCurrencies.getText() : "0");
-        values.put("ataLira", ataLiraFieldCurrencies != null && !ataLiraFieldCurrencies.getText().isEmpty() ? ataLiraFieldCurrencies.getText() : "0");
-        values.put("tamAltin", tamAltinFieldCurrencies != null && !tamAltinFieldCurrencies.getText().isEmpty() ? tamAltinFieldCurrencies.getText() : "0");
-        values.put("yarimAltin", yarimAltinFieldCurrencies != null && !yarimAltinFieldCurrencies.getText().isEmpty() ? yarimAltinFieldCurrencies.getText() : "0");
-        values.put("ceyrekAltin", ceyrekAltinFieldCurrencies != null && !ceyrekAltinFieldCurrencies.getText().isEmpty() ? ceyrekAltinFieldCurrencies.getText() : "0");
-        values.put("gramAltin", gramAltinFieldCurrencies != null && !gramAltinFieldCurrencies.getText().isEmpty() ? gramAltinFieldCurrencies.getText() : "0");
+    private Map<String, String> collectCurrencies() throws Exception {
+        Map<String, String> currencies = new HashMap<>();
+        currencies.putAll(CurrencyService.fetchUsdEurTryRates(DbHelper.API_KEY));
+        currencies.putAll(CurrencyService.fetchGoldPrices(DbHelper.API_KEY));
+        return currencies;
     }
 
     private void recordAssets(String recordType) {
@@ -177,10 +168,11 @@ public class AssetsManagementsController {
         });
     }
 
-    private void recordCurrencies() {
-        values.entrySet().stream().forEach(key -> {
+    private void recordCurrencies() throws Exception {
+
+        collectCurrencies().entrySet().stream().forEach(key -> {
             try {
-                DbHelper.insertCurrensies(key.getKey(), parseDouble(key.getValue()));
+                DbHelper.insertCurrencies(key.getKey(), parseDouble(key.getValue()));
             } catch (SQLException e) {
                 showError("Database Error", "Failed to record assets: " + e.getMessage());
             }
@@ -189,8 +181,6 @@ public class AssetsManagementsController {
 
     @FXML
     void initialize() throws SQLException {
-        dateLabel.setText(DateUtils.getDateAsString(null));
-        dateLabelCurrencies.setText(DateUtils.getDateAsString(null));
         loadChartData();
         populateTotalOverview();
 
@@ -211,6 +201,19 @@ public class AssetsManagementsController {
                     }
                 }
         );
+
+        // Show symbols so overlapping series are still visible as points
+        if (tryGrowthChart != null) {
+            tryGrowthChart.setCreateSymbols(true);
+        }
+
+        if (usdGrowthChart != null) {
+            usdGrowthChart.setCreateSymbols(true);
+        }
+        
+        if (euroGrowthChart != null) {
+            euroGrowthChart.setCreateSymbols(true);
+        }
     }
 
     @FXML
@@ -222,15 +225,10 @@ public class AssetsManagementsController {
     private void loadChartData() {
         try {
             // Get raw asset data from the database.
-            List<Map<String, Object>> rawData = DbHelper.getNetAssetsData(DbHelper.getCurrentUserId());
-
-            // Convert the raw data to a list of maps with String values.
-            List<Map<String, String>> convertedData = rawData.stream()
-                    .map(this::convertRow) // Use a helper method for clarity and reusability
-                    .collect(Collectors.toList());
+            List<Map<String, String>> rawData = AssetService.getNetAssetsData();
 
             // Set the converted data to the assetsData list.
-            assetsData.setAll(convertedData);
+            assetsData.setAll(rawData);
 
             populateAssetsChart();
         } catch (Exception e) {
@@ -240,90 +238,78 @@ public class AssetsManagementsController {
     }
 
     private void populateTotalOverview() throws SQLException {
-        // 1. Get net asset values from the database
-        Map<String, Double> netAssetValues = AssetService.getLastNetAssets().entrySet().stream()
-                .filter(entry -> entry.getKey() != null && !"created_at".equals(entry.getKey()))
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        entry -> ((Number) entry.getValue()).doubleValue()
-                ));
+        // 1) Tüm net varlık verilerini tarihe göre al
+        List<Map<String, String>> history = AssetService.getNetAssetsData();
 
-        if (netAssetValues.isEmpty()) {
-            totalTRYAssetsChart.getData().clear();
-            totalUSDAssetsChart.getData().clear();
+        totalTRYAssetsChart.getData().clear();
+        totalUSDAssetsChart.getData().clear();
+
+        if (history == null || history.isEmpty()) {
             totalTryDisplay.setText("0.00 ₺");
             totalUsdDisplay.setText("0.00 $");
             return;
         }
 
-        // 2. Get the latest currency rates from the database
+        // 2) En güncel kurları al (tarihsel kur yerine basit yaklaşım)
         Map<String, Double> rates = DbHelper.getLatestCurrencies();
-
         if (rates.isEmpty()) {
+            totalTryDisplay.setText("0.00 ₺");
+            totalUsdDisplay.setText("0.00 $");
             return;
         }
-
-        // 3. Calculate the total asset value in TRY and USD
-        double totalTry = 0.0;
-
-        totalTry += netAssetValues.getOrDefault("euro", 0.0) * rates.getOrDefault("euro", 0.0);
-        totalTry += netAssetValues.getOrDefault("dolar", 0.0) * rates.getOrDefault("dolar", 0.0);
-        totalTry += netAssetValues.getOrDefault("bilezik", 0.0) * rates.getOrDefault("bilezik", 0.0);
-        totalTry += netAssetValues.getOrDefault("ataLira", 0.0) * rates.getOrDefault("ataLira", 0.0);
-        totalTry += netAssetValues.getOrDefault("tamAltin", 0.0) * rates.getOrDefault("tamAltin", 0.0);
-        totalTry += netAssetValues.getOrDefault("yarimAltin", 0.0) * rates.getOrDefault("yarimAltin", 0.0);
-        totalTry += netAssetValues.getOrDefault("ceyrekAltin", 0.0) * rates.getOrDefault("ceyrekAltin", 0.0);
-        totalTry += netAssetValues.getOrDefault("gramAltin", 0.0) * rates.getOrDefault("gramAltin", 0.0);
-        totalTry += netAssetValues.getOrDefault("tl", 0.0);
-
-        double totalUsd = rates.getOrDefault("dolar", 0.0) > 0 ? totalTry / rates.getOrDefault("dolar", 0.0) : 0.0;
-
-        // 4. Update the chart and display labels with the single, calculated total
-        totalTRYAssetsChart.getData().clear();
-        totalUSDAssetsChart.getData().clear();
 
         XYChart.Series<String, Number> trySeries = new XYChart.Series<>();
         trySeries.setName("Toplam ₺");
         XYChart.Series<String, Number> usdSeries = new XYChart.Series<>();
         usdSeries.setName("Toplam $");
 
-        // We no longer have data by date, so we will create a single point for "Today" or a similar label
-        String dateLabel = "Bugün";
-        trySeries.getData().add(new XYChart.Data<>(dateLabel, totalTry));
-        usdSeries.getData().add(new XYChart.Data<>(dateLabel, totalUsd));
+        double lastTotalTry = 0.0;
+        double lastTotalUsd = 0.0;
+
+        for (Map<String, String> row : history) {
+            String date = row.getOrDefault("created_at", "");
+
+            double totalTry = 0.0;
+            totalTry += parseDouble(row.get("euro")) * rates.getOrDefault("euro", 0.0);
+            totalTry += parseDouble(row.get("dolar")) * rates.getOrDefault("dolar", 0.0);
+            totalTry += parseDouble(row.get("bilezik")) * rates.getOrDefault("bilezik", 0.0);
+            totalTry += parseDouble(row.get("ataLira")) * rates.getOrDefault("ataLira", 0.0);
+            totalTry += parseDouble(row.get("tamAltin")) * rates.getOrDefault("tamAltin", 0.0);
+            totalTry += parseDouble(row.get("yarimAltin")) * rates.getOrDefault("yarimAltin", 0.0);
+            totalTry += parseDouble(row.get("ceyrekAltin")) * rates.getOrDefault("ceyrekAltin", 0.0);
+            totalTry += parseDouble(row.get("gramAltin")) * rates.getOrDefault("gramAltin", 0.0);
+            totalTry += parseDouble(row.get("tl"));
+
+            double totalUsd = rates.getOrDefault("dolar", 0.0) > 0 ? totalTry / rates.getOrDefault("dolar", 0.0) : 0.0;
+
+            trySeries.getData().add(new XYChart.Data<>(date, totalTry));
+            usdSeries.getData().add(new XYChart.Data<>(date, totalUsd));
+
+            lastTotalTry = totalTry;
+            lastTotalUsd = totalUsd;
+        }
 
         totalTRYAssetsChart.getData().add(trySeries);
         totalUSDAssetsChart.getData().add(usdSeries);
 
-        totalTryDisplay.setText(String.format("%,.2f ₺", totalTry));
-        totalUsdDisplay.setText(String.format("%,.2f $", totalUsd));
-
-        // Optional: Add tooltips for the single data point
-        double finalTotalTry = totalTry;
-        trySeries.getData().get(0).nodeProperty().addListener((obs, oldNode, newNode) -> {
-            if (newNode != null) {
-                Tooltip tooltip = new Tooltip(dateLabel + "\nToplam ₺: " + String.format("%,.2f", finalTotalTry));
-                Tooltip.install(newNode, tooltip);
-            }
-        });
-        usdSeries.getData().get(0).nodeProperty().addListener((obs, oldNode, newNode) -> {
-            if (newNode != null) {
-                Tooltip tooltip = new Tooltip(dateLabel + "\nToplam $: " + String.format("%,.2f", totalUsd));
-                Tooltip.install(newNode, tooltip);
-            }
-        });
+        totalTryDisplay.setText(String.format("%,.2f ₺", lastTotalTry));
+        totalUsdDisplay.setText(String.format("%,.2f $", lastTotalUsd));
     }
 
     private void populateAssetsChart() {
         if (assetsData.isEmpty()) {
             goldWeightChart.setTitle("Veri Bulunamadı - Lütfen önce varlık ekleyin");
-            fiatGrowthChart.setTitle("Veri Bulunamadı - Lütfen önce varlık ekleyin");
+            tryGrowthChart.setTitle("Veri Bulunamadı - Lütfen önce varlık ekleyin");
+            usdGrowthChart.setTitle("Veri Bulunamadı - Lütfen önce varlık ekleyin");
+            euroGrowthChart.setTitle("Veri Bulunamadı - Lütfen önce varlık ekleyin");
             goldUnitChart.setTitle("Veri Bulunamadı - Lütfen önce varlık ekleyin");
             return;
         }
 
         goldWeightChart.getData().clear();
-        fiatGrowthChart.getData().clear();
+        tryGrowthChart.getData().clear();
+        euroGrowthChart.getData().clear();
+        usdGrowthChart.getData().clear();
         goldUnitChart.getData().clear();
 
         // Veritabanı şemasına göre sabit varlık listeleri
@@ -350,7 +336,9 @@ public class AssetsManagementsController {
                 .collect(Collectors.toList());
 
         // Her bir grafik için ilgili varlık serilerini ekle
-        addSeriesToChart(fiatGrowthChart, sortedData, fiatAssets);
+        addSeriesToChart(usdGrowthChart, sortedData, Arrays.asList("dolar"));
+        addSeriesToChart(tryGrowthChart, sortedData, Arrays.asList("tl"));
+        addSeriesToChart(euroGrowthChart, sortedData, Arrays.asList("euro"));
         addSeriesToChart(goldWeightChart, sortedData, goldWeightAssets);
         addSeriesToChart(goldUnitChart, sortedData, goldUnitAssets);
     }
@@ -363,12 +351,16 @@ public class AssetsManagementsController {
             series.setName(getChartDisplayName(assetType));
 
             for (Map<String, String> row : sortedData) {
-                String date = formatDate(row.get("created_at"));
+                String date = row.get("created_at");
                 String valueStr = row.get(assetType);
                 if (valueStr != null && !valueStr.trim().isEmpty()) {
                     try {
                         double value = Double.parseDouble(valueStr);
-                        XYChart.Data<String, Number> dataPoint = new XYChart.Data<>(date, value);
+                        // Apply tiny per-series jitter to separate overlapping series visually
+                        double epsilon = 0.0001;
+                        int idx = assetTypes.indexOf(assetType);
+                        double jittered = value + (idx * epsilon);
+                        XYChart.Data<String, Number> dataPoint = new XYChart.Data<>(date, jittered);
                         series.getData().add(dataPoint);
 
                         // Tooltip ekleme
@@ -390,25 +382,5 @@ public class AssetsManagementsController {
                 chart.getData().add(series);
             }
         }
-    }
-
-    private Map<String, String> convertRow(Map<String, Object> row) {
-        return row.entrySet().stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        entry -> {
-                            Object value = entry.getValue();
-                            if (value == null) {
-                                return ""; // Return empty string for null values
-                            }
-                            if (value instanceof Timestamp) {
-                                Timestamp timestamp = (Timestamp) value;
-                                SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
-                                return sdf.format(timestamp);
-                            } else {
-                                return value.toString(); // Convert other types to String
-                            }
-                        }
-                ));
     }
 }

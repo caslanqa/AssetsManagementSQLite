@@ -6,6 +6,8 @@ module com.caslanqa.assetsmanagement {
     requires org.yaml.snakeyaml;
     requires jbcrypt;
     requires javafx.base;
+    requires com.google.gson;
+    requires java.net.http;
 
     opens com.caslanqa.assetsmanagement to javafx.fxml;
     exports com.caslanqa.assetsmanagement;
