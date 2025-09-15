@@ -6,17 +6,20 @@ import com.caslanqa.utils.DbHelper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.chart.*;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.util.Duration;
 
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.caslanqa.utils.FormUtils.*;
-
 
 public class AssetsManagementsController {
 
@@ -92,22 +95,25 @@ public class AssetsManagementsController {
     }
 
     @FXML
-    void recordAssetsBtn(MouseEvent event) {
+    void recordAssetsBtn(MouseEvent event) throws SQLException {
         recordAssets("+");
+        AssetService.insertNetAssets(AssetService.calculateLatestAssetsValues());
         clearFormFields();
     }
 
     @FXML
-    void deleteAssetsBtn(MouseEvent event) {
+    void deleteAssetsBtn(MouseEvent event) throws SQLException {
         recordAssets("-");
+        AssetService.insertNetAssets(AssetService.calculateLatestAssetsValues());
         clearFormFields();
     }
 
     @FXML
-    void setCurrenciesBtn(MouseEvent event) {
+    void setCurrenciesBtn(MouseEvent event) throws SQLException {
         collectCurrenciesFormValues();
         clearOverviewFormFields();
         recordCurrencies();
+        refreshAssetsChart();
     }
 
     private void clearFormFields() {
@@ -169,7 +175,6 @@ public class AssetsManagementsController {
                 showError("Database Error", "Failed to record assets: " + e.getMessage());
             }
         });
-
     }
 
     private void recordCurrencies() {
@@ -180,7 +185,6 @@ public class AssetsManagementsController {
                 showError("Database Error", "Failed to record assets: " + e.getMessage());
             }
         });
-
     }
 
     @FXML
@@ -193,7 +197,11 @@ public class AssetsManagementsController {
         analysisTabPane.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldTab, newTab) -> {
                     if (newTab == unitBasedTab) {
-                        refreshAssetsChart();
+                        try {
+                            refreshAssetsChart();
+                        } catch (SQLException e) {
+                            throw new RuntimeException(e);
+                        }
                     } else if (newTab == totalOverviewTab) {
                         try {
                             populateTotalOverview();
@@ -206,29 +214,39 @@ public class AssetsManagementsController {
     }
 
     @FXML
-    void totalTryDisplay(MouseEvent event) throws SQLException {
-        AssetService.getNetAssetValues();
-    }
-
-    @FXML
-    private void refreshAssetsChart() {
+    private void refreshAssetsChart() throws SQLException {
         loadChartData();
+        populateTotalOverview();
     }
 
     private void loadChartData() {
         try {
-            List<Map<String, String>> data = (List<Map<String, String>>) AssetService.getNetAssetValues();
-            assetsData.setAll(data);
+            // Get raw asset data from the database.
+            List<Map<String, Object>> rawData = DbHelper.getNetAssetsData(DbHelper.getCurrentUserId());
+
+            // Convert the raw data to a list of maps with String values.
+            List<Map<String, String>> convertedData = rawData.stream()
+                    .map(this::convertRow) // Use a helper method for clarity and reusability
+                    .collect(Collectors.toList());
+
+            // Set the converted data to the assetsData list.
+            assetsData.setAll(convertedData);
+
             populateAssetsChart();
-            populateTotalOverview();
         } catch (Exception e) {
             showError("Hata", "Veri yüklenirken hata oluştu: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     private void populateTotalOverview() throws SQLException {
         // 1. Get net asset values from the database
-        Map<String, Double> netAssetValues = AssetService.getNetAssetValues();
+        Map<String, Double> netAssetValues = AssetService.getLastNetAssets().entrySet().stream()
+                .filter(entry -> entry.getKey() != null && !"created_at".equals(entry.getKey()))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> ((Number) entry.getValue()).doubleValue()
+                ));
 
         if (netAssetValues.isEmpty()) {
             totalTRYAssetsChart.getData().clear();
@@ -239,32 +257,26 @@ public class AssetsManagementsController {
         }
 
         // 2. Get the latest currency rates from the database
-        List<Map<String, Object>> latestCurrenciesList = DbHelper.getLatestCurrencies();
+        Map<String, Double> rates = DbHelper.getLatestCurrencies();
 
-        if (latestCurrenciesList.isEmpty()) {
+        if (rates.isEmpty()) {
             return;
         }
-
-        Map<String, Double> rates = latestCurrenciesList.stream()
-                .collect(Collectors.toMap(
-                        row -> (String) row.get("currency_code"),
-                        row -> (Double) row.get("rate")
-                ));
 
         // 3. Calculate the total asset value in TRY and USD
         double totalTry = 0.0;
 
-        totalTry += netAssetValues.getOrDefault("EUR", 0.0) * rates.getOrDefault("EUR", 0.0);
-        totalTry += netAssetValues.getOrDefault("USD", 0.0) * rates.getOrDefault("USD", 0.0);
-        totalTry += netAssetValues.getOrDefault("BİLEZİK", 0.0) * rates.getOrDefault("BİLEZİK", 0.0);
-        totalTry += netAssetValues.getOrDefault("ATALİRA", 0.0) * rates.getOrDefault("ATALİRA", 0.0);
-        totalTry += netAssetValues.getOrDefault("TAMALTIN", 0.0) * rates.getOrDefault("TAMALTIN", 0.0);
-        totalTry += netAssetValues.getOrDefault("YARIMALTIN", 0.0) * rates.getOrDefault("YARIMALTIN", 0.0);
-        totalTry += netAssetValues.getOrDefault("ÇEYREKALTIN", 0.0) * rates.getOrDefault("ÇEYREKALTIN", 0.0);
-        totalTry += netAssetValues.getOrDefault("GRAMALTIN", 0.0) * rates.getOrDefault("GRAMALTIN", 0.0);
-        totalTry += netAssetValues.getOrDefault("TL", 0.0);
+        totalTry += netAssetValues.getOrDefault("euro", 0.0) * rates.getOrDefault("euro", 0.0);
+        totalTry += netAssetValues.getOrDefault("dolar", 0.0) * rates.getOrDefault("dolar", 0.0);
+        totalTry += netAssetValues.getOrDefault("bilezik", 0.0) * rates.getOrDefault("bilezik", 0.0);
+        totalTry += netAssetValues.getOrDefault("ataLira", 0.0) * rates.getOrDefault("ataLira", 0.0);
+        totalTry += netAssetValues.getOrDefault("tamAltin", 0.0) * rates.getOrDefault("tamAltin", 0.0);
+        totalTry += netAssetValues.getOrDefault("yarimAltin", 0.0) * rates.getOrDefault("yarimAltin", 0.0);
+        totalTry += netAssetValues.getOrDefault("ceyrekAltin", 0.0) * rates.getOrDefault("ceyrekAltin", 0.0);
+        totalTry += netAssetValues.getOrDefault("gramAltin", 0.0) * rates.getOrDefault("gramAltin", 0.0);
+        totalTry += netAssetValues.getOrDefault("tl", 0.0);
 
-        double totalUsd = rates.getOrDefault("USD", 0.0) > 0 ? totalTry / rates.getOrDefault("USD", 0.0) : 0.0;
+        double totalUsd = rates.getOrDefault("dolar", 0.0) > 0 ? totalTry / rates.getOrDefault("dolar", 0.0) : 0.0;
 
         // 4. Update the chart and display labels with the single, calculated total
         totalTRYAssetsChart.getData().clear();
@@ -314,14 +326,30 @@ public class AssetsManagementsController {
         fiatGrowthChart.getData().clear();
         goldUnitChart.getData().clear();
 
+        // Veritabanı şemasına göre sabit varlık listeleri
         List<String> fiatAssets = Arrays.asList("euro", "dolar", "tl");
         List<String> goldWeightAssets = Arrays.asList("bilezik");
         List<String> goldUnitAssets = Arrays.asList("gramAltin", "ataLira", "tamAltin", "yarimAltin", "ceyrekAltin");
 
+        // Tarih alanına göre verileri sırala
         List<Map<String, String>> sortedData = assetsData.stream()
-                .sorted(Comparator.comparing(m -> m.get("date")))
-                .toList();
+                .sorted(Comparator.comparingLong(m -> {
+                    String dateString = m.get("created_at");
+                    if (dateString == null || dateString.isEmpty()) {
+                        return 0L;
+                    }
+                    try {
+                        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
+                        return sdf.parse(dateString).getTime();
+                    } catch (ParseException e) {
+                        System.err.println("Tarih formatlama hatası: " + dateString);
+                        e.printStackTrace();
+                        return 0L;
+                    }
+                }))
+                .collect(Collectors.toList());
 
+        // Her bir grafik için ilgili varlık serilerini ekle
         addSeriesToChart(fiatGrowthChart, sortedData, fiatAssets);
         addSeriesToChart(goldWeightChart, sortedData, goldWeightAssets);
         addSeriesToChart(goldUnitChart, sortedData, goldUnitAssets);
@@ -335,7 +363,7 @@ public class AssetsManagementsController {
             series.setName(getChartDisplayName(assetType));
 
             for (Map<String, String> row : sortedData) {
-                String date = formatDate(row.get("date"));
+                String date = formatDate(row.get("created_at"));
                 String valueStr = row.get(assetType);
                 if (valueStr != null && !valueStr.trim().isEmpty()) {
                     try {
@@ -343,6 +371,7 @@ public class AssetsManagementsController {
                         XYChart.Data<String, Number> dataPoint = new XYChart.Data<>(date, value);
                         series.getData().add(dataPoint);
 
+                        // Tooltip ekleme
                         dataPoint.nodeProperty().addListener((obs, oldNode, newNode) -> {
                             if (newNode != null) {
                                 Tooltip tooltip = new Tooltip(date + "\n" + getChartDisplayName(assetType) + ": " + value);
@@ -351,7 +380,9 @@ public class AssetsManagementsController {
                             }
                         });
 
-                    } catch (NumberFormatException ignored) { }
+                    } catch (NumberFormatException ignored) {
+                        // Sayıya dönüştürülemeyen değerleri atla
+                    }
                 }
             }
 
@@ -361,4 +392,23 @@ public class AssetsManagementsController {
         }
     }
 
+    private Map<String, String> convertRow(Map<String, Object> row) {
+        return row.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> {
+                            Object value = entry.getValue();
+                            if (value == null) {
+                                return ""; // Return empty string for null values
+                            }
+                            if (value instanceof Timestamp) {
+                                Timestamp timestamp = (Timestamp) value;
+                                SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
+                                return sdf.format(timestamp);
+                            } else {
+                                return value.toString(); // Convert other types to String
+                            }
+                        }
+                ));
+    }
 }

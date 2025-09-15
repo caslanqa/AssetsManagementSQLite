@@ -6,6 +6,7 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -66,17 +67,16 @@ public class DbHelper {
         """;
 
         String createAssetsTable = """
-            CREATE TABLE IF NOT EXISTS assets (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                asset_type TEXT NOT NULL,
-                quantity REAL NOT NULL,
-                user_id INTEGER,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                record_type TEXT NOT NULL CHECK (record_type IN ('+', '-')),
-                FOREIGN KEY (user_id) REFERENCES users(id)
-                    ON DELETE SET NULL
-                    ON UPDATE CASCADE
-            );
+            CREATE TABLE IF NOT EXISTS asset_history (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        asset_type TEXT NOT NULL,
+                        quantity REAL NOT NULL,
+                        record_type TEXT NOT NULL CHECK (record_type IN ('+', '-')),
+                        user_id INTEGER NOT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    );
+                
         """;
 
         String createCurrenciesTable = """
@@ -88,12 +88,32 @@ public class DbHelper {
             );
         """;
 
+        String createNetAssetsTable = """
+            CREATE TABLE IF NOT EXISTS net_assets (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        euro REAL NOT NULL DEFAULT 0,
+                        ataLira REAL NOT NULL DEFAULT 0,
+                        tamAltin REAL NOT NULL DEFAULT 0,
+                        gramAltin REAL NOT NULL DEFAULT 0,
+                        ceyrekAltin REAL NOT NULL DEFAULT 0,
+                        yarimAltin REAL NOT NULL DEFAULT 0,
+                        bilezik REAL NOT NULL DEFAULT 0,
+                        dolar REAL NOT NULL DEFAULT 0,
+                        tl REAL NOT NULL DEFAULT 0,
+                        user_id INTEGER NOT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    );
+                
+        """;
+
         try (Connection conn = connect();
              Statement stmt = conn.createStatement()) {
             stmt.execute("PRAGMA foreign_keys = ON;");
             stmt.execute(createUserTable);
             stmt.execute(createAssetsTable);
             stmt.execute(createCurrenciesTable);
+            stmt.execute(createNetAssetsTable);
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Veritabanı tabloları oluşturulurken hata!", e);
         }
@@ -219,7 +239,7 @@ public class DbHelper {
         values.put("record_type", recordType);
         values.put("user_id", currentUserId);
 
-        return insert("assets", values, false);
+        return insert("asset_history", values, false);
     }
 
     public static long insertCurrensies(String currency_code, double rate) throws SQLException {
@@ -237,36 +257,83 @@ public class DbHelper {
         if (currentUserId == null) {
             throw new SQLException("Kullanıcı oturumu açık değil!");
         }
-        return select("assets", null, true);
+        return select("asset_history", null, true);
     }
 
-    public static List<Map<String, Object>> getLatestCurrencies() throws SQLException {
-        List<Map<String, Object>> latestCurrencies = new ArrayList<>();
+    public static Map<String, Double> getLatestCurrencies() throws SQLException {
+        Map<String, Double> latestRates = new HashMap<>();
         String sql = """
-        SELECT c1.*
-        FROM currencies c1
-        JOIN (
-            SELECT currency_code, MAX(created_at) AS latest_time
-            FROM currencies
-            GROUP BY currency_code
-        ) c2 ON c1.currency_code = c2.currency_code AND c1.created_at = c2.latest_time;
-    """;
+            SELECT
+                t1.currency_code,
+                t1.rate
+            FROM
+                currencies t1
+            INNER JOIN
+                (SELECT currency_code, MAX(created_at) AS max_created_at FROM currencies WHERE rate > 0 GROUP BY currency_code) t2
+            ON
+                t1.currency_code = t2.currency_code AND t1.created_at = t2.max_created_at
+            WHERE
+                t1.rate > 0;
+        """;
 
         try (Connection conn = connect();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
 
-            ResultSetMetaData meta = rs.getMetaData();
-            int colCount = meta.getColumnCount();
             while (rs.next()) {
-                Map<String, Object> row = new HashMap<>();
-                for (int i = 1; i <= colCount; i++) {
-                    row.put(meta.getColumnName(i), rs.getObject(i));
-                }
-                latestCurrencies.add(row);
+                String currencyCode = rs.getString("currency_code");
+                double rate = rs.getDouble("rate");
+                latestRates.put(currencyCode, rate);
             }
         }
-        return latestCurrencies;
+        return latestRates;
     }
+
+    public static List<Map<String, Object>> getNetAssetsData(int userId) {
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        String sql = "SELECT euro, ataLira, tamAltin, gramAltin, ceyrekAltin, yarimAltin, bilezik, dolar, tl, created_at " +
+                "FROM net_assets WHERE user_id = ? ORDER BY created_at";
+
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, userId);
+            ResultSet rs = stmt.executeQuery();
+
+            // Tarih formatlama için SimpleDateFormat nesnesi oluştur
+            SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
+
+            while (rs.next()) {
+                Map<String, Object> row = new HashMap<>();
+                row.put("euro", rs.getDouble("euro"));
+                row.put("ataLira", rs.getDouble("ataLira"));
+                row.put("tamAltin", rs.getDouble("tamAltin"));
+                row.put("gramAltin", rs.getDouble("gramAltin"));
+                row.put("ceyrekAltin", rs.getDouble("ceyrekAltin"));
+                row.put("yarimAltin", rs.getDouble("yarimAltin"));
+                row.put("bilezik", rs.getDouble("bilezik"));
+                row.put("dolar", rs.getDouble("dolar"));
+                row.put("tl", rs.getDouble("tl"));
+
+                // created_at sütununu alıp Timestamp'e çevir, sonra formatla
+                Timestamp timestamp = rs.getTimestamp("created_at");
+                if (timestamp != null) {
+                    row.put("created_at", sdf.format(timestamp));
+                } else {
+                    row.put("created_at", ""); // Null değerler için boş string
+                }
+
+                System.out.println("row = " + row);
+                result.add(row);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return result;
+    }
+
 
 }
