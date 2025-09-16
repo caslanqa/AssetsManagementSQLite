@@ -30,8 +30,6 @@ public class CurrencyService {
 
         HttpResponse<String> res = HTTP_CLIENT.send(req, HttpResponse.BodyHandlers.ofString());
         String responseBody = res.body();
-        System.out.println("[goldPrice] status=" + res.statusCode());
-        System.out.println("[goldPrice] body=" + responseBody);
 
         Map<String, String> goldPrices = new HashMap<>();
         // Varsayılan değerler
@@ -67,7 +65,6 @@ public class CurrencyService {
         } catch (Exception e) {
             // JSON parse hatası olursa, boş değerler döner
         }
-        System.out.println("goldPrices = " + goldPrices);
         return goldPrices;
     }
     
@@ -86,8 +83,6 @@ public class CurrencyService {
                 .GET().build();
 
         HttpResponse<String> res = HTTP_CLIENT.send(req, HttpResponse.BodyHandlers.ofString());
-        System.out.println("[currencyToAll] status=" + res.statusCode());
-        System.out.println("[currencyToAll] body=" + res.body());
 
         String responseBody = res.body();
 
@@ -137,7 +132,6 @@ public class CurrencyService {
         Map<String, String> result = new HashMap<>();
         result.put("dolar", usdTry);
         result.put("euro", eurTry);
-        System.out.println("resultFiat = " + result);
         return result;
     }
 }

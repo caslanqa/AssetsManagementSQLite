@@ -6,6 +6,7 @@ import com.caslanqa.utils.DbHelper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
@@ -238,7 +239,6 @@ public class AssetsManagementsController {
     }
 
     private void populateTotalOverview() throws SQLException {
-        // 1) Tüm net varlık verilerini tarihe göre al
         List<Map<String, String>> history = AssetService.getNetAssetsData();
 
         totalTRYAssetsChart.getData().clear();
@@ -250,7 +250,6 @@ public class AssetsManagementsController {
             return;
         }
 
-        // 2) En güncel kurları al (tarihsel kur yerine basit yaklaşım)
         Map<String, Double> rates = DbHelper.getLatestCurrencies();
         if (rates.isEmpty()) {
             totalTryDisplay.setText("0.00 ₺");
@@ -282,19 +281,37 @@ public class AssetsManagementsController {
 
             double totalUsd = rates.getOrDefault("dolar", 0.0) > 0 ? totalTry / rates.getOrDefault("dolar", 0.0) : 0.0;
 
-            trySeries.getData().add(new XYChart.Data<>(date, totalTry));
-            usdSeries.getData().add(new XYChart.Data<>(date, totalUsd));
+            XYChart.Data<String, Number> tryData = new XYChart.Data<>(date, totalTry);
+            XYChart.Data<String, Number> usdData = new XYChart.Data<>(date, totalUsd);
+
+            Tooltip tryTooltip = new Tooltip(date + "\n₺ " + String.format("%,.2f", totalTry));
+            Tooltip usdTooltip = new Tooltip(date + "\n$ " + String.format("%,.2f", totalUsd));
+
+            tryTooltip.setShowDelay(Duration.millis(50));
+            usdTooltip.setShowDelay(Duration.millis(50));
+
+            tryData.nodeProperty().addListener((obs, oldNode, newNode) -> {
+                if (newNode != null) Tooltip.install(newNode, tryTooltip);
+            });
+            usdData.nodeProperty().addListener((obs, oldNode, newNode) -> {
+                if (newNode != null) Tooltip.install(newNode, usdTooltip);
+            });
+
+            trySeries.getData().add(tryData);
+            usdSeries.getData().add(usdData);
 
             lastTotalTry = totalTry;
             lastTotalUsd = totalUsd;
         }
 
-        totalTRYAssetsChart.getData().add(trySeries);
-        totalUSDAssetsChart.getData().add(usdSeries);
+        // ✅ Artık serileri tek tek eklemek yerine addSeriesToChart kullanıyoruz
+        addSeriesToChart(totalTRYAssetsChart, trySeries);
+        addSeriesToChart(totalUSDAssetsChart, usdSeries);
 
         totalTryDisplay.setText(String.format("%,.2f ₺", lastTotalTry));
         totalUsdDisplay.setText(String.format("%,.2f $", lastTotalUsd));
     }
+
 
     private void populateAssetsChart() {
         if (assetsData.isEmpty()) {
@@ -346,6 +363,8 @@ public class AssetsManagementsController {
     private void addSeriesToChart(LineChart<String, Number> chart,
                                   List<Map<String, String>> sortedData,
                                   List<String> assetTypes) {
+        List<XYChart.Series<String, Number>> tempSeriesList = new ArrayList<>();
+
         for (String assetType : assetTypes) {
             XYChart.Series<String, Number> series = new XYChart.Series<>();
             series.setName(getChartDisplayName(assetType));
@@ -356,14 +375,12 @@ public class AssetsManagementsController {
                 if (valueStr != null && !valueStr.trim().isEmpty()) {
                     try {
                         double value = Double.parseDouble(valueStr);
-                        // Apply tiny per-series jitter to separate overlapping series visually
                         double epsilon = 0.0001;
                         int idx = assetTypes.indexOf(assetType);
                         double jittered = value + (idx * epsilon);
                         XYChart.Data<String, Number> dataPoint = new XYChart.Data<>(date, jittered);
                         series.getData().add(dataPoint);
 
-                        // Tooltip ekleme
                         dataPoint.nodeProperty().addListener((obs, oldNode, newNode) -> {
                             if (newNode != null) {
                                 Tooltip tooltip = new Tooltip(date + "\n" + getChartDisplayName(assetType) + ": " + value);
@@ -372,15 +389,56 @@ public class AssetsManagementsController {
                             }
                         });
 
-                    } catch (NumberFormatException ignored) {
-                        // Sayıya dönüştürülemeyen değerleri atla
-                    }
+                    } catch (NumberFormatException ignored) {}
                 }
             }
 
             if (!series.getData().isEmpty()) {
-                chart.getData().add(series);
+                tempSeriesList.add(series);
+            }
+        }
+
+        // 🔑 1) Bütün serileri bir kerede ekle
+        chart.getData().addAll(tempSeriesList);
+
+        // 🔑 2) Legend node’larını bul ve tıklama olayı bağla
+        chart.applyCss(); // legend'ların oluşmasını garanti eder
+        for (Node legend : chart.lookupAll(".chart-legend-item")) {
+            if (legend instanceof Label label) {
+                String seriesName = label.getText();
+
+                // Bu label hangi seriye ait onu bul
+                tempSeriesList.stream()
+                        .filter(s -> s.getName().equals(seriesName))
+                        .findFirst()
+                        .ifPresent(series -> legend.setOnMouseClicked(event -> toggleSeriesVisibility(series)));
             }
         }
     }
+
+    private void toggleSeriesVisibility(XYChart.Series<String, Number> series) {
+        boolean currentlyVisible = series.getNode().isVisible();
+        series.getNode().setVisible(!currentlyVisible);
+
+        for (XYChart.Data<String, Number> data : series.getData()) {
+            if (data.getNode() != null) {
+                data.getNode().setVisible(!currentlyVisible);
+            }
+        }
+    }
+
+    private void addSeriesToChart(LineChart<String, Number> chart, XYChart.Series<String, Number> series) {
+        chart.getData().add(series);
+        chart.applyCss();
+
+        for (Node legend : chart.lookupAll(".chart-legend-item")) {
+            if (legend instanceof Label label) {
+                String seriesName = label.getText();
+                if (series.getName().equals(seriesName)) {
+                    legend.setOnMouseClicked(event -> toggleSeriesVisibility(series));
+                }
+            }
+        }
+    }
+
 }
